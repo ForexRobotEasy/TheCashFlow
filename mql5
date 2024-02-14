@@ -1,0 +1,92 @@
+
+// Developer's Site: forexroboteasy.com
+// Development Name: Forex Robot Easy Team
+
+// TheCashFlow Forex EA
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+
+// Define constants
+#define SYMBOL 'EURUSD'
+#define STOP_LEVEL 10
+#define TRAILING_STOP 20
+
+// Define global variables
+CTrade trade;
+
+// Function to identify breakouts
+bool identifyBreakout()
+{
+   double currentHigh = High[0];
+   double currentLow = Low[0];
+   double previousHigh = High[1];
+   double previousLow = Low[1];
+   
+   bool isBreakout = false;
+   
+   if(currentHigh > previousHigh && currentLow < previousLow)
+   {
+      isBreakout = true;
+   }
+   
+   return isBreakout;
+}
+
+// Function to execute trades based on breakout strategy
+void executeTrades()
+{
+   if(identifyBreakout())
+   {
+      double stopLossLevel = Low[1] - STOP_LEVEL * Point;
+      double takeProfitLevel = High[1] + STOP_LEVEL * Point;
+      
+      trade.BuyStop(0.1, SYMBOL, High[1], stopLossLevel, takeProfitLevel);
+      trade.SellStop(0.1, SYMBOL, Low[1], stopLossLevel, takeProfitLevel);
+   }
+}
+
+// Function to adjust trailing stop
+void adjustTrailingStop()
+{
+   double currentOrderProfit = trade.Profit();
+   
+   if(currentOrderProfit >= TRAILING_STOP * Point)
+   {
+      trade.ModifyTrailingStop(TRAILING_STOP);
+   }
+}
+
+// Function to manage risk
+void manageRisk()
+{
+   double accountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double accountEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+   
+   if(accountEquity < (accountBalance * 0.5))
+   {
+      trade.CloseAll();
+   }
+}
+
+// Initialization function
+int OnInit()
+{
+   trade.SetExpertMagicNumber(123456);
+   
+   return(INIT_SUCCEEDED);
+}
+
+// Start function
+void OnTick()
+{
+   executeTrades();
+   adjustTrailingStop();
+   manageRisk();
+}
+
+// Deinitialization function
+void OnDeinit(const int reason)
+{
+   trade.CloseAll();
+}
